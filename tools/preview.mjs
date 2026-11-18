@@ -1,0 +1,15 @@
+import { chromium } from 'playwright';
+import { mkdir } from 'node:fs/promises';
+await mkdir('artifacts/raw', { recursive: true });
+const browser = await chromium.launch({ channel: 'chromium', headless: true, args: ['--disable-dev-shm-usage'] });
+const page = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 });
+page.on('pageerror', e => console.log('PAGEERROR:', e.message));
+page.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') console.log(m.type(), m.text()); });
+await page.goto('http://127.0.0.1:5197/?qa=1');
+await page.waitForFunction(() => window.__STARFORGE__, null, { timeout: 60000 }).catch(async e => { console.log('BOOT FAILED', await page.locator('body').innerText()); await page.screenshot({ path: 'artifacts/raw/boot-failed.png' }); throw e; });
+await page.waitForTimeout(1200);
+await page.screenshot({ path: 'artifacts/raw/title.png' });
+console.log(await page.evaluate(() => window.__STARFORGE__.snapshot()));
+await page.evaluate(() => window.__STARFORGE__.captureState('combat'));
+await page.screenshot({ path: 'artifacts/raw/combat.png' });
+await browser.close();

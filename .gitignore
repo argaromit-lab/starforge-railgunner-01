@@ -1,0 +1,11 @@
+node_modules/
+package-lock.json
+best-game-01-kit/
+makefun-kit.tar.gz
+out/
+artifacts/private/
+artifacts/raw/
+artifacts/qa-report.json
+artifacts/capture-manifest.json
+*.tar.gz
+*.log

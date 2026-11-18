@@ -1,0 +1,18 @@
+{
+  "name": "starforge-railgunner-volt-and-amber",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "An original offline magnetic action roguelike, built for make.fun.",
+  "scripts": {
+    "start": "node serve.ts",
+    "build": "node main.ts",
+    "test": "node tools/playtest.mjs",
+    "capture": "node tools/capture.mjs"
+  },
+  "devDependencies": {
+    "three": "0.170.0",
+    "playwright": "1.56.1",
+    "sharp": "0.34.5"
+  }
+}
