@@ -19,4 +19,5 @@ Offline static native ES modules, vendored Three.js, offscreen multi-pass bloom,
 - Genuine OpenCode sessions discovered by the kit. Preflight passed model pricing, timestamps, and run record.
 - Original game implemented and running. Browser QA exercised keyboard and mouse, an eight-wave victory, two drafts, natural defeat, restart, and HUD bounds.
 - Four 1280 × 800 browser captures generated. Workshop and victory came from an input-driven run; combat uses the posed Final Stand checkpoint and the game's overload event.
+- Final polish widens the playfield to 1920 × 1200, adds smooth follow and pointer look-ahead with 1.18× zoom, anchors VFX and labels to world coordinates, backs the route with translucent dark glass, and moves the Chain banner above damage labels.
 - No login or submit performed.

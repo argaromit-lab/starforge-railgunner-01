@@ -112,6 +112,6 @@ export class GameUI {
     if (this.mode !== 'playing') return;
     const el = document.createElement('div'); el.className = `damage ${color} ${large ? 'large' : ''}`; el.textContent = text;
     el.style.left = `${x}px`; el.style.top = `${y}px`;
-    this.refs.floats.append(el); setTimeout(() => el.remove(), 1150);
+    this.refs.floats.append(el); setTimeout(() => el.remove(), 1150); return el;
   }
 }

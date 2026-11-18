@@ -31,7 +31,7 @@ export class StarforgeWorld {
     this.renderer.shadowMap.enabled = true; this.renderer.shadowMap.type = T.PCFSoftShadowMap;
     this.renderer.outputColorSpace = T.SRGBColorSpace; this.renderer.toneMapping = T.ACESFilmicToneMapping; this.renderer.toneMappingExposure = 1.3;
     this.scene = new T.Scene(); this.scene.background = new T.Color(0x314659); this.scene.fog = new T.FogExp2(0x6d6660, .006);
-    this.camera = new T.OrthographicCamera(-28, 28, 17.5, -17.5, .1, 180); this.baseCamera = new T.Vector3(0, 38, 31); this.camera.position.copy(this.baseCamera); this.camera.lookAt(0, 0, -1);
+    this.camera = new T.OrthographicCamera(-28, 28, 17.5, -17.5, .1, 180); this.camera.zoom = 1.18; this.baseCamera = new T.Vector3(0, 38, 31); this.cameraTarget = new T.Vector3(0, 0, -1); this.camera.position.copy(this.baseCamera); this.camera.lookAt(this.cameraTarget);
     this.scene.add(new T.HemisphereLight(0xbce7ff, 0x9b5834, 2.1));
     const sun = new T.DirectionalLight(0xffd8a5, 3.9); sun.position.set(-24, 31, -14); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.camera.left = -30; sun.shadow.camera.right = 30; sun.shadow.camera.top = 26; sun.shadow.camera.bottom = -26; sun.shadow.normalBias = .035; sun.shadow.bias = -.0002; sun.shadow.camera.far = 110; this.scene.add(sun);
     const fill = new T.DirectionalLight(0x71bfff, 1.45); fill.position.set(18, 18, 12); this.scene.add(fill);
@@ -64,34 +64,34 @@ export class StarforgeWorld {
   buildViaduct() {
     const g = new T.Group();
     const floorMat = new T.MeshStandardMaterial({ color: 0x8b999b, map: plateTexture(), roughness: .85, metalness: .38 });
-    part(g, 'box', MAT.dark, 0, -.75, 0, 39, 1.5, 28);
-    part(g, 'box', floorMat, 0, -.12, 0, 37.5, .25, 27.5);
+    part(g, 'box', MAT.dark, 0, -.75, 0, 51, 1.5, 36);
+    part(g, 'box', floorMat, 0, -.12, 0, 49.5, .25, 35.5);
     const metal = new T.MeshStandardMaterial({ color: 0x637580, roughness: .66, metalness: .7 });
-    for (const x of [-18.4, 18.4]) {
-      part(g, 'box', MAT.copper, x, .08, 0, .52, .18, 28);
-      part(g, 'box', MAT.amber, x - Math.sign(x) * .28, .13, 0, .08, .1, 28);
-      for (let z = -13; z <= 13; z += 2.2) {
+    for (const x of [-24.4, 24.4]) {
+      part(g, 'box', MAT.copper, x, .08, 0, .52, .18, 36);
+      part(g, 'box', MAT.amber, x - Math.sign(x) * .28, .13, 0, .08, .1, 36);
+      for (let z = -17; z <= 17; z += 2.2) {
         part(g, 'box', metal, x, .5, z, .38, 1.0, .23);
         part(g, 'box', MAT.dark, x, .93, z + .9, .25, .17, 1.75);
         part(g, 'box', MAT.gold, x, .98, z + .85, .27, .07, 1.3);
       }
     }
-    for (const x of [-9.5, 9.5]) {
-      part(g, 'box', MAT.dark, x, .03, 0, 1.1, .13, 27.7);
-      for (const dx of [-.37, .37]) { part(g, 'box', metal, x + dx, .17, 0, .16, .18, 27.8); part(g, 'box', MAT.amber, x + dx, .28, 0, .045, .04, 27.8); }
-      for (let z = -13.5; z < 14; z += .8) part(g, 'box', MAT.copper, x, .09, z, 1.2, .13, .11);
+    for (const x of [-12.5, 12.5]) {
+      part(g, 'box', MAT.dark, x, .03, 0, 1.1, .13, 35.7);
+      for (const dx of [-.37, .37]) { part(g, 'box', metal, x + dx, .17, 0, .16, .18, 35.8); part(g, 'box', MAT.amber, x + dx, .28, 0, .045, .04, 35.8); }
+      for (let z = -17.5; z < 18; z += .8) part(g, 'box', MAT.copper, x, .09, z, 1.2, .13, .11);
     }
-    for (let z = -14; z <= 14; z += 4.65) {
-      part(g, 'box', metal, 0, -.5, z, 40.5, .9, .42);
-      for (const x of [-20, 20]) {
+    for (let z = -18; z <= 18; z += 4.65) {
+      part(g, 'box', metal, 0, -.5, z, 52.5, .9, .42);
+      for (const x of [-26, 26]) {
         part(g, 'box', MAT.copper, x, -.3, z, 2.2, .5, 1.9);
         part(g, 'cylinder', MAT.dark, x, -4.2, z, 1.5, 8, 1.5);
         part(g, 'box', metal, x, -2, z, .5, 6.5, .5, 0, 0, Math.sign(x) * -.32);
         part(g, 'box', MAT.amber, x, -.02, z, 1.6, .06, .13);
       }
     }
-    for (let z = -12; z <= 12; z += 3.9) {
-      for (let x = -15; x <= 16; x += 6.4) {
+    for (let z = -16; z <= 16; z += 3.9) {
+      for (let x = -21; x <= 21; x += 6.4) {
         part(g, 'box', MAT.dark, x, .032, z, 2.9, .04, .8);
         for (let j = 0; j < 9; j++) part(g, 'box', metal, x - 1.24 + j * .31, .059, z, .085, .045, .69);
       }
@@ -101,7 +101,7 @@ export class StarforgeWorld {
     }
     this.scene.add(mergeParts(g));
     this.pillars = [];
-    for (const [x, z] of [[-14, -7], [13.5, -7], [-14, 7.2], [13.5, 7.2]]) {
+    for (const [x, z] of [[-19, -9], [18, -9], [-19, 9], [18, 9]]) {
       const p = new T.Group();
       part(p, 'cylinder', 'dark', 0, .15, 0, 2.15, .3, 2.15);
       part(p, 'cylinder', 'copper', 0, .38, 0, 1.4, .25, 1.4);
@@ -115,7 +115,7 @@ export class StarforgeWorld {
     const decals = [['STARFORGE', 0, 9, 8, 1.2], ['08', 0, -9, 3.3, 2.5], ['HIGH VOLTAGE', -13.8, -.5, 4.7, .7]];
     for (const [text, x, z, w, h] of decals) { const d = new T.Mesh(new T.PlaneGeometry(w, h), groundDecal(text)); d.rotation.x = -Math.PI / 2; d.position.set(x, .045, z); this.scene.add(d); }
     const decor = new T.Group();
-    for (const [x, z] of [[-17, 1], [17, 11], [-17, -11], [16.5, -11]]) {
+    for (const [x, z] of [[-22, 1], [22, 13], [-22, -13], [21.5, -13]]) {
       part(decor, 'box', 'dark', x, .55, z, 1.5, 1.1, 1.2); part(decor, 'box', 'copper', x, 1.13, z, 1.6, .14, 1.3);
       for (let j = 0; j < 4; j++) part(decor, 'box', 'steel', x - .52 + j * .35, .6, z - .63, .1, .6, .08);
       part(decor, 'box', 'amber', x, .87, z - .68, .62, .08, .05);
@@ -146,6 +146,22 @@ export class StarforgeWorld {
     this.raycaster.setFromCamera(new T.Vector2(clientX / innerWidth * 2 - 1, -(clientY / innerHeight * 2 - 1)), this.camera);
     const hit = new T.Vector3(); this.raycaster.ray.intersectPlane(this.plane, hit); return { x: hit.x, z: hit.z };
   }
+  followCamera(game, dt, pointer = null) {
+    const play = game.mode !== 'title';
+    const mouseX = pointer ? (pointer.x / innerWidth - .5) * 5.2 : 0;
+    const mouseZ = pointer ? (pointer.y / innerHeight - .5) * 3.6 : 0;
+    const x = play ? game.player.x * .78 + mouseX : 0;
+    const z = play ? game.player.z * .78 + mouseZ - 1 : -1;
+    const blend = 1 - Math.exp(-dt * 7.5);
+    this.cameraTarget.x += (x - this.cameraTarget.x) * blend;
+    this.cameraTarget.z += (z - this.cameraTarget.z) * blend;
+    const shake = game.reducedMotion ? 0 : game.shake ** 2;
+    this.camera.position.copy(this.baseCamera).add(this.cameraTarget);
+    this.camera.position.z += 1 + Math.cos(game.time * 101) * shake * .3;
+    this.camera.position.x += Math.sin(game.time * 137) * shake * .42;
+    this.camera.lookAt(this.cameraTarget);
+    this.camera.updateMatrixWorld();
+  }
   sync(game, time) {
     const p = game.player; this.player.position.set(p.x, 0, p.z); this.player.rotation.y = Math.atan2(p.x - game.aim.x, p.z - game.aim.z);
     animateModel(this.player, time, p.moving, p.dashTime > 0);
@@ -160,8 +176,6 @@ export class StarforgeWorld {
     if (game.boss && !this.boss) { this.boss = dreadnoughtModel(); this.scene.add(this.boss); }
     if (this.boss) { this.boss.visible = !!game.boss; if (game.boss) { this.boss.position.set(game.boss.x, 0, game.boss.z); this.boss.rotation.y = Math.sin(time * .3) * .1; animateModel(this.boss, time); } }
     this.lava.uniforms.uTime.value = time;
-    const shake = game.reducedMotion ? 0 : game.shake * game.shake;
-    this.camera.position.copy(this.baseCamera); this.camera.position.x += Math.sin(time * 137) * shake * .42; this.camera.position.z += Math.cos(time * 101) * shake * .3; this.camera.lookAt(0, 0, -1);
   }
   render() {
     const r = this.renderer; r.info.autoReset = false; r.info.reset();

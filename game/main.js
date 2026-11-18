@@ -10,6 +10,7 @@ const game = new CombatGame(world.pillars, audio);
 const fx = new PlasmaEffects(world);
 const input = { up: false, down: false, left: false, right: false, fire: false, dash: false, overload: false };
 let suspended = false, lastTime = performance.now(), simAccumulator = 0;
+let pointer = null;
 const clearInput = () => { for (const k of Object.keys(input)) input[k] = false; };
 const start = mode => { clearInput(); fx.clear(); game.start(mode); };
 const title = () => { clearInput(); fx.clear(); game.reset(); game.attract(); };
@@ -30,7 +31,7 @@ addEventListener('keydown', e => {
   if (e.code === 'KeyF') fullscreen();
 });
 addEventListener('keyup', e => { if (keymap[e.code]) input[keymap[e.code]] = false; });
-addEventListener('pointermove', e => game.setAim(world.aim(e.clientX, e.clientY)));
+addEventListener('pointermove', e => { pointer = { x: e.clientX, y: e.clientY }; game.setAim(world.aim(pointer.x, pointer.y)); });
 addEventListener('pointerdown', e => { if (e.target.closest('button') || game.mode !== 'playing') return; audio.unlock(); if (e.button === 0) input.fire = true; if (e.button === 2) input.overload = true; });
 addEventListener('pointerup', e => { if (e.button === 0) input.fire = false; });
 addEventListener('pointercancel', clearInput);
@@ -41,25 +42,38 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { cle
 function processEvents() {
   for (const e of game.events) {
     fx.event(e);
-    if (e.type === 'float') { const p = world.screen(e.x, e.z, 1.7); ui.float(e.text, (p.x / 1280 - .5) * innerWidth / ui.scale + 640, (p.y / 800 - .5) * innerHeight / ui.scale + 400 + (e.dy || 0), e.color, e.large); }
+    if (e.type === 'float') {
+      const label = ui.float(e.text, 0, 0, e.color, e.large);
+      if (label) label.anchor = e;
+    }
     if (e.type === 'announce') ui.announce(e.text, e.detail);
   }
   game.events.length = 0;
+}
+function positionLabels() {
+  for (const el of ui.refs.floats.children) {
+    const e = el.anchor;
+    const p = world.screen(e.x, e.z, 1.7);
+    el.style.left = `${(p.x / 1280 - .5) * innerWidth / ui.scale + 640}px`;
+    el.style.top = `${(p.y / 800 - .5) * innerHeight / ui.scale + 400 + (e.dy || 0)}px`;
+  }
 }
 function frame(now) {
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - lastTime) / 1000); lastTime = now;
   if (!suspended) {
+    if (game.mode === 'playing' || game.mode === 'title') world.followCamera(game, dt, pointer);
+    if (pointer && game.mode === 'playing') game.setAim(world.aim(pointer.x, pointer.y));
     simAccumulator += dt;
     let steps = 0;
     while (simAccumulator >= 1 / 120 && steps++ < 6) { game.update(1 / 120, input); simAccumulator -= 1 / 120; input.dash = false; input.overload = false; }
     if (steps >= 6) simAccumulator = 0;
     fx.update(dt);
   }
-  ui.update(game.state()); processEvents(); world.sync(game, game.time); world.render(); fx.draw(game);
+  ui.update(game.state()); processEvents(); positionLabels(); world.sync(game, game.time); world.render(); fx.draw(game);
   audio.update(game.mode === 'playing');
 }
-ui.update(game.state()); world.sync(game, 0); world.render(); fx.draw(game);
+ui.update(game.state()); world.followCamera(game, 2); world.sync(game, 0); world.render(); fx.draw(game);
 document.querySelector('#loading').remove(); requestAnimationFrame(frame);
 
 // Reproducible QA hooks are available only on localhost with an explicit query flag.
@@ -67,8 +81,9 @@ if (new URLSearchParams(location.search).get('qa') === '1' && ['127.0.0.1', 'loc
   window.__STARFORGE__ = {
     game, world, ui, fx, input,
     snapshot: () => ({ ...game.state(), player: { ...game.player }, enemyCount: game.enemies.length, totalBolts: game.totalBolts, totalLinks: game.totalLinks, projectiles: game.projectiles.length, ...world.diagnostics() }),
+    getPointer: () => pointer,
     freeze(value = true) { suspended = value; },
-    advance(seconds, intent = {}) { Object.assign(input, intent); for (let i = 0; i < Math.ceil(seconds * 120); i++) game.update(1 / 120, input); clearInput(); ui.update(game.state()); processEvents(); world.sync(game, game.time); world.render(); fx.draw(game); },
+    advance(seconds, intent = {}) { Object.assign(input, intent); for (let i = 0; i < Math.ceil(seconds * 120); i++) game.update(1 / 120, input); clearInput(); world.followCamera(game, 2); ui.update(game.state()); processEvents(); positionLabels(); world.sync(game, game.time); world.render(); fx.draw(game); },
     captureState(name) {
       clearInput(); fx.clear(); suspended = true;
       if (name === 'title') { title(); game.time = 13; }
@@ -81,13 +96,13 @@ if (new URLSearchParams(location.search).get('qa') === '1' && ['127.0.0.1', 'loc
         nodes.forEach((e, i) => { e.x = positions[i][0]; e.z = positions[i][1]; });
         game.player.x = -9; game.player.z = 3; game.aim = { x: 4, z: -3 };
         game.boss.x = 7; game.boss.z = -4.4; game.boss.hp = 4580;
-        ui.update(game.state()); world.sync(game, game.time); world.render();
-        game.overload(); processEvents();
+        ui.update(game.state());
+        game.overload(); processEvents(); positionLabels();
         fx.update(.14);
         for (const el of ui.refs.floats.children) { el.style.animationPlayState = 'paused'; el.style.animationDelay = '-.18s'; }
       } else if (name === 'upgrade') { game.start(); game.mode = 'upgrade'; game.wave = 3; game.sector = 1; game.mods = { voltage: 0, gravity: 0, repair: 0 }; game.events.length = 0; }
       else if (name === 'victory') { game.start('final'); game.mode = 'victory'; game.score = 281460; game.kills = 196; game.bestChain = 8; game.elapsed = 342; game.boss = null; game.events.length = 0; }
-      ui.update(game.state()); world.sync(game, game.time); world.render(); fx.draw(game); return this.snapshot();
+      world.followCamera(game, 2); positionLabels(); ui.update(game.state()); world.sync(game, game.time); world.render(); fx.draw(game); return this.snapshot();
     },
   };
   window.__THREE_GAME_DIAGNOSTICS__ = () => world.diagnostics();

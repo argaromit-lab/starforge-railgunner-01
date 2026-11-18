@@ -21,6 +21,7 @@ for (const [state, filename] of [['combat', '01-combat.png'], ['title', '02-titl
     }
     const run = await page.evaluate(pilot, { stopAtWorkshop: state === 'upgrade' });
     if (run.mode !== state) throw new Error(`Campaign capture expected ${state}, reached ${run.mode}`);
+    await page.evaluate(() => { const a=window.__STARFORGE__; a.world.followCamera(a.game,2,a.getPointer()); a.ui.update(a.game.state()); a.world.sync(a.game,a.game.time); a.world.render(); a.fx.draw(a.game); });
     snapshot = await page.evaluate(() => { const a = window.__STARFORGE__; a.advance(0); return a.snapshot(); });
   } else snapshot = await page.evaluate(s => window.__STARFORGE__.captureState(s), state);
   // Capture immediately to retain the live overload event and floating damage numerals.

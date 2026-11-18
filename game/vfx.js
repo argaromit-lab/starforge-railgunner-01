@@ -10,16 +10,15 @@ export class PlasmaEffects {
   }
   point(x, z, y = 1) { return this.world.screen(x, z, y); }
   sparks(x, z, count, color = 'amber', force = 1) {
-    const origin = this.point(x, z, 1);
-    for (let i = 0; i < count; i++) { const a = this.random() * Math.PI * 2, speed = (30 + this.random() * 220) * force; this.particles.push({ x: origin.x, y: origin.y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed * .7 - 40, life: .2 + this.random() * .75, max: 1, color, size: this.random() * 2.8 + .7 }); }
+    for (let i = 0; i < count; i++) { const a = this.random() * Math.PI * 2, speed = (30 + this.random() * 220) * force; this.particles.push({ anchorX: x, anchorZ: z, x: 0, y: 0, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed * .7 - 40, life: .2 + this.random() * .75, color, size: this.random() * 2.8 + .7 }); }
     if (this.particles.length > 800) this.particles.splice(0, this.particles.length - 800);
   }
   event(e) {
     if (e.type === 'overload') {
-      const p = this.point(e.x, e.z, .6); this.rings.push({ x: p.x, y: p.y, radius: 15, life: .68, maxRadius: e.radius * 30 + 70 });
-      this.bursts.push({ ...p, life: .48, count: e.count, nodes: e.nodes.map(n => this.point(n.x, n.z)) });
+      this.rings.push({ x: e.x, z: e.z, radius: 15, life: .68, maxRadius: e.radius * 30 + 70 });
+      this.bursts.push({ x: e.x, z: e.z, life: .48, nodes: e.nodes });
       this.sparks(e.x, e.z, 95, 'amber', 1.5); this.sparks(e.x, e.z, 55, 'cyan', 1.1); this.flash = .2;
-    } else if (e.type === 'kill') { this.sparks(e.x, e.z, 14, 'amber', .6); const p = this.point(e.x, e.z); this.rings.push({ x: p.x, y: p.y, radius: 2, life: .23, maxRadius: 27 }); }
+    } else if (e.type === 'kill') { this.sparks(e.x, e.z, 14, 'amber', .6); this.rings.push({ x: e.x, z: e.z, radius: 2, life: .23, maxRadius: 27 }); }
     else if (e.type === 'link') this.sparks(e.x, e.z, 4, 'cyan', .25);
     else if (e.type === 'muzzle') this.sparks(e.x, e.z, 3, 'cyan', .2);
     else if (e.type === 'trail' || e.type === 'dash') this.sparks(e.x, e.z, e.type === 'dash' ? 25 : 3, 'amber', .35);
@@ -79,15 +78,17 @@ export class PlasmaEffects {
     for (const a of game.pickups) { const p = this.point(a.x, a.z, .4 + Math.sin(t * 3 + a.x) * .1); g.fillStyle = '#ffc458'; g.save(); g.translate(p.x, p.y); g.rotate(t + a.x); g.fillRect(-3, -3, 6, 6); g.restore(); }
     for (const r of this.rings) {
       const alpha = Math.min(1, r.life * 3);
-      g.globalAlpha = alpha; g.beginPath(); g.ellipse(r.x, r.y, r.radius, r.radius * .57, -.02, 0, 7); g.lineWidth = 3.6; g.strokeStyle = '#a4fbff'; g.stroke();
-      g.beginPath(); g.ellipse(r.x, r.y, r.radius * .8, r.radius * .45, .05, 0, 7); g.lineWidth = 2; g.strokeStyle = '#ffbd55'; g.stroke(); g.globalAlpha = 1;
+      const p = this.point(r.x, r.z, .6), radius = r.radius * this.world.camera.zoom;
+      g.globalAlpha = alpha; g.beginPath(); g.ellipse(p.x, p.y, radius, radius * .57, -.02, 0, 7); g.lineWidth = 3.6; g.strokeStyle = '#a4fbff'; g.stroke();
+      g.beginPath(); g.ellipse(p.x, p.y, radius * .8, radius * .45, .05, 0, 7); g.lineWidth = 2; g.strokeStyle = '#ffbd55'; g.stroke(); g.globalAlpha = 1;
     }
     for (const burst of this.bursts) {
       const k = burst.life / .48;
-      for (let i = 0; i < burst.nodes.length; i++) this.lightning(burst, burst.nodes[i], i + 50, k * 1.4);
-      const grd = g.createRadialGradient(burst.x, burst.y, 1, burst.x, burst.y, 80 * k + 10); grd.addColorStop(0, '#eaffff'); grd.addColorStop(.15, '#a8f8ff'); grd.addColorStop(.35, '#34aaccaa'); grd.addColorStop(1, '#238cb000'); g.fillStyle = grd; g.fillRect(burst.x - 100, burst.y - 100, 200, 200);
+      const p = this.point(burst.x, burst.z, .6);
+      for (let i = 0; i < burst.nodes.length; i++) this.lightning(p, this.point(burst.nodes[i].x, burst.nodes[i].z), i + 50, k * 1.4);
+      const grd = g.createRadialGradient(p.x, p.y, 1, p.x, p.y, 94 * k + 10); grd.addColorStop(0, '#eaffff'); grd.addColorStop(.15, '#a8f8ff'); grd.addColorStop(.35, '#34aaccaa'); grd.addColorStop(1, '#238cb000'); g.fillStyle = grd; g.fillRect(p.x - 105, p.y - 105, 210, 210);
     }
-    for (const p of this.particles) { g.globalAlpha = Math.min(1, p.life * 3); g.strokeStyle = p.color === 'cyan' ? '#9af9ff' : p.color === 'coral' ? '#ff8268' : '#ffcb69'; g.lineWidth = p.size; g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(p.x - p.vx * .025, p.y - p.vy * .025); g.stroke(); } g.globalAlpha = 1;
+    for (const p of this.particles) { const a = this.point(p.anchorX, p.anchorZ); const x = a.x + p.x, y = a.y + p.y; g.globalAlpha = Math.min(1, p.life * 3); g.strokeStyle = p.color === 'cyan' ? '#9af9ff' : p.color === 'coral' ? '#ff8268' : '#ffcb69'; g.lineWidth = p.size; g.beginPath(); g.moveTo(x, y); g.lineTo(x - p.vx * .025, y - p.vy * .025); g.stroke(); } g.globalAlpha = 1;
     b.clearRect(0, 0, 1280, 800); b.filter = 'blur(9px)'; b.drawImage(this.glow, 0, 0); b.filter = 'none';
     c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = .65; c.drawImage(this.blur, 0, 0); c.filter = 'blur(3px)'; c.globalAlpha = .55; c.drawImage(this.glow, 0, 0); c.filter = 'none'; c.globalAlpha = 1; c.drawImage(this.glow, 0, 0); c.restore();
     if (this.flash > 0 && !game.reducedMotion) { c.fillStyle = `rgba(180,249,255,${this.flash * .12})`; c.fillRect(0, 0, 1280, 800); }

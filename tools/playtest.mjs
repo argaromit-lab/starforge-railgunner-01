@@ -85,6 +85,32 @@ for (const state of layoutStates) {
   if (state !== 'combat') check(!report.layouts[state].hudVisible && report.layouts[state].floatCount === 0, `${state}: combat HUD and damage labels are hidden`);
 }
 await page.evaluate(() => window.__STARFORGE__.captureState('combat'));
+const labelLayout = await page.evaluate(() => {
+  const labels = [...document.querySelectorAll('#floats .damage')].map(el => ({ text: el.textContent, large: el.classList.contains('large'), rect: (() => { const r=el.getBoundingClientRect(); return {left:r.left,right:r.right,top:r.top,bottom:r.bottom}; })() }));
+  const chain = labels.find(x => x.text.startsWith('CHAIN'));
+  const damage = labels.filter(x => x.text.startsWith('+') || x.text.startsWith('−'));
+  const overlaps = chain ? damage.filter(x => chain.rect.left < x.rect.right && chain.rect.right > x.rect.left && chain.rect.top < x.rect.bottom && chain.rect.bottom > x.rect.top) : [];
+  const route = document.querySelector('.route'), bg = getComputedStyle(route).backgroundColor;
+  return { labels, overlaps, routeBackground: bg, routeRect: (() => { const r=route.getBoundingClientRect(); return {left:r.left,right:r.right,top:r.top,bottom:r.bottom}; })() };
+});
+report.layouts.combatLabels = labelLayout;
+check(labelLayout.overlaps.length === 0, 'CHAIN banner does not overlap floating damage numbers');
+check(labelLayout.routeBackground.includes('rgba(4, 15, 23') || labelLayout.routeBackground.includes('rgba(4,15,23'), 'Route has a dark translucent contrast backdrop');
+const cameraTrack = await page.evaluate(() => {
+  const a=window.__STARFORGE__, g=a.game, original=g.player.x, start=a.world.cameraTarget.x;
+  g.player.x=original+6;
+  for(let i=0;i<48;i++) a.world.followCamera(g,1/60,a.getPointer());
+  const follow=a.world.cameraTarget.x;
+  g.player.x=original;
+  for(let i=0;i<60;i++) a.world.followCamera(g,1/60,a.getPointer());
+  const settled=a.world.cameraTarget.x;
+  return {start,follow,settled,zoom:a.world.camera.zoom,followShift:follow-start,recovery:Math.abs(settled-start)};
+});
+report.camera = cameraTrack;
+check(cameraTrack.zoom >= 1.17 && cameraTrack.zoom <= 1.19, 'Camera zoom is approximately 1.18x');
+check(cameraTrack.followShift > 3, 'Camera smoothly follows player displacement');
+check(cameraTrack.recovery < .3, 'Camera smoothly recenters after player returns');
+await page.evaluate(() => window.__STARFORGE__.captureState('combat'));
 report.render = await page.evaluate(() => { const w = window.__STARFORGE__.world, gl = w.renderer.getContext(), ext = gl.getExtension('WEBGL_debug_renderer_info'); return { ...w.diagnostics(), gpu: ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER) }; });
 const image = await page.screenshot();
 const { data, info } = await sharp(image).removeAlpha().raw().toBuffer({ resolveWithObject: true });

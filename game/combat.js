@@ -63,10 +63,10 @@ export class CombatGame {
       if (this.wave > 3 && i % 9 === 0) type = 'artillery';
       if (checkpoint) {
         const angle = i * 2.39996; const radius = 4 + (i % 4) * 2.3;
-        this.spawn(type, clamp(-1 + Math.cos(angle) * radius, -16, 16), clamp(1.3 + Math.sin(angle) * radius * .76, -10, 11));
+        this.spawn(type, clamp(-1 + Math.cos(angle) * radius, -22, 22), clamp(1.3 + Math.sin(angle) * radius * .76, -14, 14));
       } else {
         const side = i % 4, t = this.random();
-        this.spawn(type, side < 2 ? (side ? 16.7 : -16.7) : -15 + t * 30, side >= 2 ? (side === 2 ? -11.5 : 11.5) : -10 + t * 20);
+        this.spawn(type, side < 2 ? (side ? 22.7 : -22.7) : -20 + t * 40, side >= 2 ? (side === 2 ? -15.5 : 15.5) : -14 + t * 28);
       }
     }
     if (this.wave === 8) this.boss = this.makeBoss();
@@ -122,7 +122,7 @@ export class CombatGame {
     this.combo = Math.min(9.99, this.combo + count * .14); this.comboTimer = 8;
     this.audio.play('overload', count);
     this.emit('overload', { x, z, count, radius, nodes: nodes.map(n => ({ x: n.x, z: n.z })) });
-    this.emit('float', { text: `CHAIN x${count}!`, x, z, large: true, color: 'cyan', dy: -66 });
+    this.emit('float', { text: `CHAIN x${count}!`, x, z, large: true, color: 'cyan', dy: -125 });
     const marked = active.filter(n => !n.boss);
     for (const target of [marked[0], marked.find(n => n.type === 'drone')].filter((n, i, list) => n && list.indexOf(n) === i)) {
       this.emit('float', { text: `+${target.score}`, x: target.x, z: target.z, color: 'amber', dy: 21 });
@@ -192,7 +192,7 @@ export class CombatGame {
     if (input.dash) this.dash(dx, dz); if (input.overload) this.overload(); if (input.fire) this.fire();
     if (p.dashTime > 0) { p.dashTime -= d; p.vx = p.dashX * 31; p.vz = p.dashZ * 31; this.emit('trail', { x: p.x, z: p.z }); }
     else { const blend = 1 - Math.exp(-d * 22); p.vx += (dx * 7.1 - p.vx) * blend; p.vz += (dz * 7.1 - p.vz) * blend; }
-    p.x = clamp(p.x + p.vx * d, -17.2, 17.2); p.z = clamp(p.z + p.vz * d, -11.7, 11.7);
+    p.x = clamp(p.x + p.vx * d, -23.2, 23.2); p.z = clamp(p.z + p.vz * d, -15.7, 15.7);
     for (const pillar of this.pillars) { const dist = distance(p, pillar), min = p.radius + pillar.radius; if (dist < min && dist > .001) { p.x += (p.x - pillar.x) / dist * (min - dist); p.z += (p.z - pillar.z) / dist * (min - dist); } }
     if (this.pendingOverload) { this.pendingOverload.time -= d; if (this.pendingOverload.time <= 0) this.resolveOverload(); }
     this.updateBolts(d); if (!this.pendingOverload) this.conduct(d); this.updateEnemies(d); this.updateProjectiles(d); this.updatePickups(d); this.updateBoss(d);
@@ -238,7 +238,7 @@ export class CombatGame {
           this.emit('enemyShot', { x: e.x, z: e.z });
         }
       }
-      e.x = clamp(e.x, -17, 17); e.z = clamp(e.z, -11.5, 11.5);
+      e.x = clamp(e.x, -23, 23); e.z = clamp(e.z, -15.5, 15.5);
     }
     for (let i = 0; i < this.enemies.length; i++) for (let j = i + 1; j < this.enemies.length; j++) {
       const a = this.enemies[i], b = this.enemies[j]; if (a.pullTime > 0 || b.pullTime > 0) continue;
@@ -248,7 +248,7 @@ export class CombatGame {
   }
   updateProjectiles(dt) {
     for (const b of this.projectiles) { b.life -= dt; b.x += b.vx * dt; b.z += b.vz * dt; if (distance(this.player, b) < this.player.radius + b.radius) { this.hurt(b.damage, 'plasma round'); b.life = 0; } }
-    this.projectiles = this.projectiles.filter(p => p.life > 0 && Math.abs(p.x) < 20 && Math.abs(p.z) < 15);
+    this.projectiles = this.projectiles.filter(p => p.life > 0 && Math.abs(p.x) < 26 && Math.abs(p.z) < 19);
   }
   updatePickups(dt) {
     for (const a of this.pickups) {
@@ -274,7 +274,7 @@ export class CombatGame {
     }
     if (distance(this.player, b) < 3) this.hurt(24, 'dreadnought impact');
     this.reinforcement += dt;
-    if (this.reinforcement > 10 && this.enemies.length < 15) { this.reinforcement = 0; for (let i = 0; i < 7; i++) this.spawn(i % 3 ? 'drone' : 'walker', -16 + this.random() * 32, this.random() > .5 ? 11 : -11); }
+    if (this.reinforcement > 10 && this.enemies.length < 15) { this.reinforcement = 0; for (let i = 0; i < 7; i++) this.spawn(i % 3 ? 'drone' : 'walker', -22 + this.random() * 44, this.random() > .5 ? 15 : -15); }
   }
   state() {
     return { mode: this.mode, wave: this.wave, sector: this.sector, heat: this.heat, score: this.score, combo: this.combo, amber: this.amber, armor: this.player.armor, maxArmor: this.player.maxArmor, capacitor: this.capacitor, chains: this.chains.length, maxChains: this.maxChains, dashCooldown: this.player.dashCooldown, bossHp: this.boss?.hp || 0, bossMaxHp: this.boss?.maxHp || 0, elapsed: this.elapsed, kills: this.kills, overloads: this.overloads, bestChain: this.bestChain, wins: this.wins, losses: this.losses, mods: this.mods, drones: this.enemies.filter(e => e.type === 'drone').length, walkers: this.enemies.filter(e => e.type !== 'drone').length, finalStand: this.finalStand };
